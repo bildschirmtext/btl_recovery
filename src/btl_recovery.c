@@ -12,24 +12,38 @@ int main(int argc, char *argv[])
 	int blocknum=0;
 	uint8_t block[2048];
 	while (fread(block, sizeof(block), 1, stdin)>0) {
-		int start=1;
-		while (start<sizeof(block)) {
-			if ( (block[start]==0x1f) && ((block[start+1]>0x20) && (block[start+1]<0x7f)) ) {
-				break;
-			}
-			start=start+1;
-		}
-		if (start!=sizeof(block)) {
-			uint8_t *sp=&(block[start]);
-			int len=strnlen(sp, sizeof(block)-start);
-			char fn[256];
-			memset(fn, 0, sizeof(fn));
-			snprintf(fn, sizeof(fn)-1, outf, blocknum);
-			FILE *f=fopen(fn,"w");
-			fwrite(sp, len, 1, f);
-			//fwrite(block, sizeof(block), 1, f);
-			fclose(f);
-		}
+		char fn[256];
+		memset(fn, 0, sizeof(fn));
+		snprintf(fn, sizeof(fn)-1, outf, blocknum);
 		blocknum=blocknum+1;
+		if (blocknum==1) continue; //ignore the first block
+		//pointer to the description
+		int description=(int)block[0x88] | (int)block[0x89]<<8;
+		//if no description, it's not a valid block
+		if (description<0x88) continue;
+		if (description>2048) continue;
+
+		//pointer to the cept block
+		int cept=(int)block[0x92] | (int)block[0x93]<<8;
+		if (cept==0) {
+			cept=(int)block[0x9A] | (int)block[0x9B]<<8;
+		}
+		
+		if (cept==0) continue;
+		if (cept>2048) continue;
+
+		int start=cept;
+		printf("%s ", fn);
+		int n;
+		for (n=description; n<cept; n++) {
+			printf("%c", block[n]);
+		}
+		printf("\n");
+		uint8_t *sp=&(block[start]);
+		int len=strnlen(sp, sizeof(block)-start);
+		FILE *f=fopen(fn,"w");
+		fwrite(sp, len, 1, f);		
+		fclose(f);
+
 	}
 }

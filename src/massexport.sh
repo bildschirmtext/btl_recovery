@@ -9,7 +9,7 @@ do
 	then
 		bn=`basename $x .BTL`
 		mkdir $bn
-		./btl_recovery $bn/%04d.cpt < $x
+		./btl_recovery $bn/%04d.cpt < $x > $bn/descriptions.txt
 		zip -r $bn.zip $bn
 	fi
 done
