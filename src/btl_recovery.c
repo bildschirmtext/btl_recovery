@@ -23,14 +23,19 @@ int main(int argc, char *argv[])
 		if (description<0x88) continue;
 		if (description>2048) continue;
 
-		//pointer to the cept block
+		//pointer to the cept block and its size
 		int cept=(int)block[0x92] | (int)block[0x93]<<8;
+		int len=(int)block[0x94] | (int)block[0x95]<<8;
 		if (cept==0) {
 			cept=(int)block[0x9A] | (int)block[0x9B]<<8;
+			len=(int)block[0x9C] | (int)block[0x9D]<<8;
 		}
 		
 		if (cept==0) continue;
 		if (cept>2048) continue;
+
+
+
 
 		int start=cept;
 		printf("%s ", fn);
@@ -40,7 +45,6 @@ int main(int argc, char *argv[])
 		}
 		printf("\n");
 		uint8_t *sp=&(block[start]);
-		int len=strnlen(sp, sizeof(block)-start);
 		FILE *f=fopen(fn,"w");
 		fwrite(sp, len, 1, f);		
 		fclose(f);
