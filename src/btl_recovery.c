@@ -2,6 +2,25 @@
 #include <stdio.h>
 #include <string.h>
 
+
+void dump_cept(FILE *f, uint8_t block[], int start, int len)
+{
+	if (f==NULL) return;
+	if (block==NULL) return;
+	fwrite(&(block[start]), len, 1, f);
+}
+
+void dump_cept_block(FILE *f, uint8_t block[], int offset)
+{
+	int start=(int)block[offset+0] | (int)block[offset+1]<<8;
+	int len  =(int)block[offset+2] | (int)block[offset+3]<<8;
+	if (start==0) return;
+	if (start>=2048) return;
+	if (len==0) return;
+	if (start+len>=2048) return;
+	dump_cept(f, start, len);
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc!=2) {
@@ -34,9 +53,6 @@ int main(int argc, char *argv[])
 		if (cept==0) continue;
 		if (cept>2048) continue;
 
-
-
-
 		int start=cept;
 		printf("%s ", fn);
 		int n;
@@ -46,7 +62,10 @@ int main(int argc, char *argv[])
 		printf("\n");
 		uint8_t *sp=&(block[start]);
 		FILE *f=fopen(fn,"w");
-		fwrite(sp, len, 1, f);		
+		dump_cept_block(f, block, 0x92);
+		dump_cept_block(f, block, 0x9a);
+		dump_cept_block(f, block, 0xa2);	
+		dump_cept_block(f, block, 0xae);
 		fclose(f);
 
 	}
