@@ -18,7 +18,32 @@ void dump_cept_block(FILE *f, uint8_t block[], int offset)
 	if (start>=2048) return;
 	if (len==0) return;
 	if (start+len>=2048) return;
-	dump_cept(f, start, len);
+	dump_cept(f, block, start, len);
+}
+
+void print_description(char *fn, uint8_t block[], int offset)
+{
+	int start=(int)block[offset+0] | (int)block[offset+1]<<8;
+	int len  =(int)block[offset+2] | (int)block[offset+3]<<8;
+	if (start==0) return;
+	if (start>=2048) return;
+	if (len==0) return;
+	if (start+len>=2048) return;
+	if (len>127) return;
+	char desc[128];
+	memset(desc, 0, sizeof(desc));
+	int n;
+	for (n=0; n<len; n++) {
+		desc[n]=block[n+start];
+	}
+	//trim the end of the string
+	int slen=strlen(desc);
+	while ((slen>0) && (desc[slen-1]==' ')) {
+		desc[slen-1]=0;
+		slen=strlen(desc);
+	}
+	if (slen<=0) return;
+	printf("%s %02x %s\n", fn, offset, desc);
 }
 
 int main(int argc, char *argv[])
@@ -53,13 +78,10 @@ int main(int argc, char *argv[])
 		if (cept==0) continue;
 		if (cept>2048) continue;
 
+		print_description(fn, block, 0x88);
+		print_description(fn, block, 0x8e);
+
 		int start=cept;
-		printf("%s ", fn);
-		int n;
-		for (n=description; n<cept; n++) {
-			printf("%c", block[n]);
-		}
-		printf("\n");
 		uint8_t *sp=&(block[start]);
 		FILE *f=fopen(fn,"w");
 		dump_cept_block(f, block, 0x92);
