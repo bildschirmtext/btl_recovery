@@ -28,8 +28,9 @@ int mark_chunk_if_empty(const int start, const int len, const int bn)
 	return 1;
 }
 
-int check_and_mark_pointer(const int bn)
+int check_and_mark_pointer(const int bn, const int known)
 {
+	if (known!=0) mark_chunk(bn,4,bn); //Mark known addresses even if they aren't used here
 	int s=block[bn+0] | ((int) block[bn+1])<<8 ;
 	int l=block[bn+2] | ((int) block[bn+3])<<8 ;
 	if (s==0) return 0;
@@ -71,72 +72,77 @@ void set_chunk_color(const int c)
 
 int main(int argc, char *argv[])
 {
-	fread(block, sizeof(block), 1, stdin);
-	memset(chunk_num, 0, sizeof(chunk_num));
-	
-	check_and_mark_pointer(0x10);
-	check_and_mark_pointer(0x7e);
-	check_and_mark_pointer(0x88);
-	check_and_mark_pointer(0x8e);
-	check_and_mark_pointer(0x92);
-	check_and_mark_pointer(0x9a);
-	check_and_mark_pointer(0x9e);
-	check_and_mark_pointer(0xa2);
-	check_and_mark_pointer(0xa6);
+	int blocknumber=0;
+	while (fread(block, sizeof(block), 1, stdin)>0) {
+		memset(chunk_num, 0, sizeof(chunk_num));
+		
+		printf("Block: %d\n", blocknumber);
+
+		check_and_mark_pointer(0x10, 1);
+		check_and_mark_pointer(0x7e, 1);
+		check_and_mark_pointer(0x88, 1);
+		check_and_mark_pointer(0x8e, 1);
+		check_and_mark_pointer(0x92, 1);
+		check_and_mark_pointer(0x9a, 1);
+		check_and_mark_pointer(0x9e, 1);
+		check_and_mark_pointer(0xa2, 1);
+		check_and_mark_pointer(0xa6, 1);
 
 
-	int n;
-	for (n=1; n<BLOCK_LEN; n++) {
-		if (chunk_num[n]==0) {
-			check_and_mark_pointer(n);
-		}
-	}
-	if (argc<2) return 0;
-
-	set_bg_color(0);
-	set_fg_color(7);
-	
-	printf("    ");
-	for (n=0; n<32; n++) {
-		printf("%02x ", n);
-		if (n==15) printf(" ");
-	}
-	printf(" ");
-	for (n=0; n<32; n++) {
-		printf("%01x", n%16);
-	}
-	printf("\n");
-	set_fg_color(0xf);
-	for (n=0; n<BLOCK_LEN/32; n++) {
-		printf("%03x ", n*32);
-		int m;
-		for (m=0; m<32; m++) {
-			int p=m+n*32;
-			set_chunk_color(chunk_num[p]);
-			printf("%02x", block[p]);
-			if (chunk_num[p]!=chunk_num[p+1]) set_chunk_color(0);
-			printf(" ");
-			if (m==15) printf(" ");
-		}
-		set_chunk_color(0);
-		printf(" ");
-		for (m=0; m<32; m++) {
-			int p=m+n*32;
-			char c=block[p];
-			if (block[p]<32) c='.';
-			if (block[p]>=0x7f) c='.';
-			set_chunk_color(chunk_num[p]);
-			printf("%c", c);
-			if (m==15) {
-				if (chunk_num[p]!=chunk_num[p+1]) set_chunk_color(0);
-				printf(" ");
+		int n;
+		for (n=1; n<BLOCK_LEN; n++) {
+			if (chunk_num[n]==0) {
+				check_and_mark_pointer(n, 0);
 			}
 		}
-		set_chunk_color(0);
-		printf("\n");
+		if (argc<2) return 0;
 
+		set_bg_color(0);
+		set_fg_color(7);
+		
+		printf("    ");
+		for (n=0; n<32; n++) {
+			printf("%02x ", n);
+			if (n==15) printf(" ");
+		}
+		printf(" ");
+		for (n=0; n<32; n++) {
+			printf("%01x", n%16);
+		}
+		printf("\n");
+		set_fg_color(0xf);
+		for (n=0; n<BLOCK_LEN/32; n++) {
+			printf("%03x ", n*32);
+			int m;
+			for (m=0; m<32; m++) {
+				int p=m+n*32;
+				set_chunk_color(chunk_num[p]);
+				printf("%02x", block[p]);
+				if (chunk_num[p]!=chunk_num[p+1]) set_chunk_color(0);
+				printf(" ");
+				if (m==15) printf(" ");
+			}
+			set_chunk_color(0);
+			printf(" ");
+			for (m=0; m<32; m++) {
+				int p=m+n*32;
+				char c=block[p];
+				if (block[p]<32) c='.';
+				if (block[p]>=0x7f) c='.';
+				set_chunk_color(chunk_num[p]);
+				printf("%c", c);
+				if (m==15) {
+					if (chunk_num[p]!=chunk_num[p+1]) set_chunk_color(0);
+					printf(" ");
+				}
+			}
+			set_chunk_color(0);
+			printf("\n");
+
+		}
+		blocknumber=blocknumber+1;
 	}
 
-	return 1;
+	return 0;
 
 }
